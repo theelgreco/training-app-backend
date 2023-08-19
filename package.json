@@ -8,7 +8,7 @@
     "nodemon": "^3.0.1"
   },
   "scripts": {
-    "start": "node server.js",
+    "start": "node server.js & node ./db/connect.js",
     "dev": "nodemon server.js & node ./db/connect.js"
   },
   "name": "server",
@@ -17,5 +17,8 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "engines": {
+    "node": ">=14 <15"
+  }
 }
