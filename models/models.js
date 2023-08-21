@@ -13,6 +13,8 @@ const Workout = mongoose.model("Workout", workoutSchema);
 const Routine = mongoose.model("Routine", routineSchema);
 const Message = mongoose.model("Message", messageSchema);
 
+// *************** USER *************** //
+
 const createAndSaveUser = async (username, password) => {
   const newUser = new User({
     username: username,
@@ -61,86 +63,6 @@ const validateUserDetails = async (username, password) => {
     }
 
     return validUser;
-  } catch (error) {
-    throw error;
-  }
-};
-
-const findWorkoutHistory = async (username, order, limit) => {
-  if (!username) throw new Error("no username provided");
-
-  let query = WorkoutHistory.find({ username: username });
-
-  if (order) {
-    query = query.sort({ date: order });
-  }
-
-  if (limit) {
-    query = query.limit(parseInt(limit));
-  }
-
-  try {
-    const workouts = await query.exec();
-    return workouts;
-  } catch (error) {
-    throw error;
-  }
-};
-
-const updateWorkoutHistory = async (data) => {
-  try {
-    const newWorkout = new WorkoutHistory(data);
-    await newWorkout.save();
-  } catch (error) {
-    console.error(error);
-    throw error;
-  }
-};
-
-const removeAllUserWorkouts = async (username) => {
-  try {
-    const remove = await WorkoutHistory.deleteMany({ username: username });
-    return remove;
-  } catch (error) {
-    console.error(error);
-    throw error;
-  }
-};
-
-const createAndSaveWorkout = async (data) => {
-  const newWorkout = new Workout(data);
-  try {
-    const res = await newWorkout.save();
-    return res;
-  } catch (error) {
-    throw error;
-  }
-};
-
-const findWorkouts = async (username) => {
-  try {
-    const res = await Workout.find({ username: username });
-    return res;
-  } catch (error) {
-    throw error;
-  }
-};
-
-const createAndSaveRoutine = async (data) => {
-  const newRoutine = new Routine(data);
-
-  try {
-    const res = await newRoutine.save();
-    return res;
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-const findRoutine = async (username) => {
-  try {
-    const res = await Routine.find({ username: username });
-    return res;
   } catch (error) {
     throw error;
   }
@@ -243,6 +165,151 @@ const findUserMessages = async (username) => {
   }
 };
 
+// *************** WORKOUT HISTORY *************** //
+
+const findWorkoutHistory = async (username, order, limit) => {
+  if (!username) throw new Error("no username provided");
+
+  let query = WorkoutHistory.find({ username: username });
+
+  if (order) {
+    query = query.sort({ date: order });
+  }
+
+  if (limit) {
+    query = query.limit(parseInt(limit));
+  }
+
+  try {
+    const workouts = await query.exec();
+    return workouts;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const updateWorkoutHistory = async (data) => {
+  try {
+    const findRoutine = await Routine.find({
+      username: data.username,
+      routineName: data.routineName,
+    });
+    const workoutName = data.workoutName;
+    const routine = findRoutine[0];
+    console.log(data);
+    console.log(findRoutine);
+    const routineWorkouts = routine.workouts;
+    const lastIndex = routineWorkouts.length - 1;
+    const workoutIndexInRoutine = routineWorkouts.findIndex((el) => {
+      return el.workoutName === workoutName;
+    });
+    const nextWorkoutIndex = workoutIndexInRoutine + 1;
+    if (nextWorkoutIndex > lastIndex) {
+      routine.nextWorkout = routine.workouts[0].workoutName;
+    } else {
+      routine.nextWorkout = routine.workouts[nextWorkoutIndex].workoutName;
+    }
+    const newWorkout = new WorkoutHistory(data);
+    await newWorkout.save();
+    await routine.save();
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+// *************** WORKOUTS *************** //
+
+const removeAllUserWorkouts = async (username) => {
+  try {
+    const remove = await WorkoutHistory.deleteMany({ username: username });
+    return remove;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+const createAndSaveWorkout = async (data) => {
+  const newWorkout = new Workout(data);
+  try {
+    const res = await newWorkout.save();
+    return res;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const findWorkouts = async (username) => {
+  try {
+    const res = await Workout.find({ username: username });
+    return res;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const findNextWorkout = async (username) => {
+  try {
+    const findRoutine = await Routine.find({
+      username: username,
+      current: true,
+    });
+    const currentRoutine = findRoutine[0];
+    const nextWorkoutInRoutine = currentRoutine.nextWorkout;
+    const nextWorkout = await Workout.find({
+      username: username,
+      workoutName: nextWorkoutInRoutine,
+    });
+    console.log("next workout found -->", nextWorkout[0]);
+    console.log("from routine -->", currentRoutine.routineName);
+    return { routine: currentRoutine.routineName, workout: nextWorkout[0] };
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+// *************** ROUTINES *************** //
+
+const createAndSaveRoutine = async (data) => {
+  const newRoutine = new Routine(data);
+
+  try {
+    const findCurrent = await Routine.find({
+      current: true,
+      username: data.username,
+    });
+    const currentDefault = findCurrent[0];
+
+    if (!currentDefault) {
+      console.log(
+        "setting as default as it is the first routine for this user"
+      );
+      newRoutine.current = true;
+    } else if (newRoutine.current) {
+      console.log("replacing current default routine with new default");
+      currentDefault.current = false;
+      await currentDefault.save();
+    }
+
+    const res = await newRoutine.save();
+    console.log("new routine saved succesfully");
+    return res;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const findRoutine = async (username) => {
+  try {
+    const res = await Routine.find({ username: username });
+    return res;
+  } catch (error) {
+    throw error;
+  }
+};
+
 module.exports = {
   createAndSaveUser,
   findUserByUsername,
@@ -258,4 +325,5 @@ module.exports = {
   saveFriendAndRemoveRequest,
   addMessageAndSave,
   findUserMessages,
+  findNextWorkout,
 };

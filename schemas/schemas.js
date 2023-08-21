@@ -18,6 +18,8 @@ exports.routineSchema = new Schema({
   username: { type: String, required: true },
   routineName: { type: String, required: true },
   workouts: { type: Array, required: true },
+  nextWorkout: { type: String },
+  current: { type: Boolean },
 });
 
 exports.workoutSchema = new Schema({

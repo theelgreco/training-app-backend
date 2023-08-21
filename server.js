@@ -16,6 +16,7 @@ const {
   viewProfileAsFriend,
   postMessage,
   getMessages,
+  getNextWorkout,
 } = require("./controllers/controllers");
 
 const cors = require("cors");
@@ -44,9 +45,9 @@ app.post("/api/request/send", postFriendRequest);
 
 app.post("/api/request/accept", acceptFriendRequest);
 
-app.get("/api/workouthistory", getWorkoutHistory);
+app.get("/api/:username/workouthistory", getWorkoutHistory);
 
-app.post("/api/workouthistory", postWorkoutHistory);
+app.post("/api/:username/workouthistory", postWorkoutHistory);
 
 app.delete("/api/workouthistory", deleteAllWorkouts);
 
@@ -61,6 +62,8 @@ app.post("/api/routines", postRoutine);
 app.post("/api/:user/messages", postMessage);
 
 app.get("/api/:user/messages", getMessages);
+
+app.get("/api/:username/nextworkout", getNextWorkout);
 
 app.listen(PORT, () => {
   console.log("server is listening on port: " + PORT);

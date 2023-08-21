@@ -13,6 +13,7 @@ const {
   saveFriendAndRemoveRequest,
   addMessageAndSave,
   findUserMessages,
+  findNextWorkout,
 } = require("../models/models");
 
 exports.createLogin = async (req, res) => {
@@ -64,7 +65,8 @@ exports.viewProfileAsFriend = async (req, res) => {
 };
 
 exports.getWorkoutHistory = async (req, res) => {
-  const { username, order, limit } = req.query;
+  const { order, limit } = req.query;
+  const { username } = req.params;
 
   try {
     const result = await findWorkoutHistory(username, order, limit);
@@ -130,7 +132,6 @@ exports.postRoutine = async (req, res) => {
 
   try {
     const result = await createAndSaveRoutine(data);
-    console.log("routine created successfully");
     res.status(200).send({ msg: "routine created successfully" });
   } catch (error) {
     res.status(400).send({ msg: "bad request" });
@@ -195,5 +196,16 @@ exports.getMessages = async (req, res) => {
     res.status(200).send({ messages: result });
   } catch (error) {
     console.error(error);
+  }
+};
+
+exports.getNextWorkout = async (req, res) => {
+  const { username } = req.params;
+
+  try {
+    const nextWorkout = await findNextWorkout(username);
+    res.status(200).send({ nextWorkout: nextWorkout });
+  } catch (error) {
+    res.status(404).send({ msg: "next workout not found" });
   }
 };
